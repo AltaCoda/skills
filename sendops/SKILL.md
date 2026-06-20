@@ -65,12 +65,12 @@ If a request spans areas (common — e.g. "segment everyone who bounced, then st
 - **Membership ≠ mailability.** Being in a List or Segment does not mean SendOps will email someone. Consent and suppression are enforced separately, at send time.
 - **Undeliverable list ≠ Suppression list.** The **suppression list** mirrors the AWS SES suppression list. The **undeliverable list** is SendOps's own derived view based on configurable rules over bounce/complaint history. They answer different questions — see the reports reference.
 - **Git is the source of truth for templates** (and, when a repo is connected, for segment/attribute *definitions* too). Data — list membership, attribute values — never lives in git; it lives in SendOps.
-- **The audience UI is view-only in this release.** Lists, Segments, and attributes are *created and edited* via the API or a connected GitHub repo; the dashboard displays them, deep-links to GitHub, and lets you pause/resume a managed Segment — but there is no in-app editor. Don't tell a user to "click New Segment" in the UI — tell them how to author the definition. (Verify against their build if they say the UI differs; products move.)
+- **The audience UI is partly writable — the surface differs by object.** **Lists** are fully managed in the dashboard: create, edit, delete, and add/remove members (permission `lists.manage`). **Segments** can be *paused/resumed* in the UI (`segments.manage`) but have **no in-app predicate editor** — you author the CEL definition via the API or a connected GitHub repo. **Attribute definitions** are managed via the API (now writable) or git, not a dashboard form. So "click New List" is fine, but "click New Segment" is not — for a Segment, hand the user the predicate and an authoring path. (Verify against their build if they say the UI differs; products move.)
 - **Reports refresh manually**, not live. If numbers look stale, the user may need to hit refresh.
 
 ## Tone
 
-Be the friendly expert. Lead with the answer, then the artifact, then where it goes. Prefer a worked example over abstract description. When you hit a genuine limitation of the current release (no in-app segment editor, public API is read-only, no dedicated-IP management), say so plainly and give the real path forward rather than pretending. Keep AWS/SES accuracy high — users trust this skill precisely because it tells them the truth about what's happening under the hood.
+Be the friendly expert. Lead with the answer, then the artifact, then where it goes. Prefer a worked example over abstract description. When you hit a genuine limitation of the current release (no in-app segment *predicate* editor, no v1 write endpoint for lists/segments, no dedicated-IP management), say so plainly and give the real path forward rather than pretending. Keep AWS/SES accuracy high — users trust this skill precisely because it tells them the truth about what's happening under the hood.
 
 ---
 
@@ -252,20 +252,23 @@ This is why **membership over time** is a first-class thing: SendOps keeps the f
 
 > **Membership ≠ mailability.** Being in a List/Segment does not mean SendOps will email the contact. Consent (topic preferences, unsubscribe) and suppression are enforced **separately at send time**.
 
-## The current UI is view-only
+## What you can author in the UI vs. the API
 
-In this release the audience dashboard is **read-only**:
+The audience dashboard is **partly writable**, and the surface differs by object:
 
-- You can **view** Lists, Segments, their predicate, eval class, status, member count, and current member list.
-- You can **pause/resume** a *managed* Segment (permission `segments.manage`). Git-backed segments have no pause button — you pause them by removing the source file from the repo.
-- You **cannot** create or edit Lists/Segments/attributes in the UI. There is no in-app editor.
+- **Lists** — full CRUD in the dashboard: create, edit, delete, and add/remove members (permission `lists.manage`). Members can be added by **email** (the contact is auto-created if new) or by existing contact id, with per-row results.
+- **Segments** — you can **view** the predicate, eval class, status, and members, and **pause/resume** a *managed* Segment (`segments.manage`). There is **no in-app predicate editor** — you author the CEL definition via the API or git. Git-backed segments have no pause button; you pause them by removing the source file from the repo.
+- **Attribute definitions** — managed via the **API** (now writable, see below) or a connected repo. No dashboard form for the registry.
 
-To create/edit, the user uses **either**:
+To author Segments and attribute definitions, the user uses **either**:
 
-1. **The session API** — `POST/PUT/DELETE /api/v1/orgs/{slug}/segments` (and the lists/attributes equivalents). Full CRUD. This is what the dashboard would call; it's dashboard-token auth.
+1. **The session API** — `POST/PUT/DELETE /api/v1/orgs/{slug}/segments` (and the lists/attributes equivalents). Full CRUD; dashboard-token auth.
 2. **A connected GitHub repo** — definitions live as files; SendOps syncs them. (See "Managed vs git-backed.")
 
-> The **Public API v1** (`/v1/...`, API-key auth) is **read-only** for audiences — `GET /v1/lists`, `GET /v1/segments`, `GET /v1/attributes`, plus `POST /v1/segments/preview`. There is **no** v1 write endpoint for lists/segments. So "create a segment via the public API" is not possible today — direct them to the session API or git.
+> **Public API v1** (`/v1/...`, API-key auth) — read vs. write differs by object:
+> - **Lists & Segments are read-only**: `GET /v1/lists` (+ `/{id}`, `/{id}/members`), `GET /v1/segments` (+ `/{id}`, `/{id}/members`), plus the read-class `POST /v1/segments/preview`. There is **no** v1 write endpoint — "create a segment via the public API" is not possible today; direct them to the session API or git.
+> - **Attribute definitions are writable** — the first v1 write surface (SND-906): `POST /v1/attributes`, `PUT /v1/attributes/{id}`, `DELETE /v1/attributes/{id}`, and the zero-write impact preview `POST /v1/attributes/{id}/preview`, all under scope **`api.attributes.manage`** (reads use `api.attributes.view`).
+> - **Broadcasts are read + preview**: `GET /v1/broadcasts` (+ `/{id}`, `/{id}/results`) and `POST /v1/broadcasts/{id}/preview` (scope `api.broadcasts.view`).
 
 So your job for any "I want an audience of X" request is to **hand them the artifact** (a `.cel` predicate, or a list definition) and tell them which of the two authoring paths to use.
 
@@ -373,9 +376,9 @@ Custom attributes must be **registered** before use. An attribute has:
 
 Rules:
 
-- **Type is immutable once values exist.** You can't change `score` from `string` to `number` after data has been written. Plan the type up front.
+- **The registry is mutable and authoritative — edits always apply, never blocked.** Name, type, and enum changes go through, but each edit is **classified** by its effect: **free** (no data risk — e.g. string⇄enum), **safe-but-stale** (values keep their meaning), or **disruptive** (a rename or a cast-class change that can break predicates). A **disruptive** edit raises a standing per-segment `eval_warning` and triggers best-effort re-evaluation — it does *not* quarantine or roll back. So type is **no longer immutable**; just **preview the impact first** (see below) before a rename or cast-class change. (Git-origin definitions are the exception: the repo is ground truth, so editing one via API returns **409**.)
 - Values are written per-contact via `PUT /api/v1/orgs/{slug}/contacts/{id}/attributes`; writes are validated against the registry and trigger incremental re-evaluation of any segment referencing that attribute.
-- Read the registry via Public API: `GET /v1/attributes`, `GET /v1/attributes/{id}` (scope `api.attributes.view`). Management is session/git only.
+- **Manage the registry via Public API** (scope `api.attributes.manage`): `POST /v1/attributes`, `PUT /v1/attributes/{id}`, `DELETE /v1/attributes/{id}`, and the dry-run `POST /v1/attributes/{id}/preview`. Reads use `api.attributes.view` (`GET /v1/attributes`, `GET /v1/attributes/{id}`). The session API and a connected repo remain valid authoring paths too.
 
 An on-disk attribute schema (for git-backed definitions) is a JSON map:
 
@@ -395,6 +398,8 @@ Always preview a non-trivial predicate before committing it.
 - Public API: `POST /v1/segments/preview` (scope `api.segments.view`).
 
 Returns a **count**, the **eval class**, and a small **sample** of `{contact_id, email}`. No membership is written — it's a pure read. Use it to sanity-check size *before* you commit a definition to git or POST it.
+
+The same discipline applies to **attribute-definition edits**: `POST /v1/attributes/{id}/preview` (scope `api.attributes.manage`) returns the edit's **class** (free / safe-but-stale / disruptive) and, for a disruptive change, the affected segments and projected drop-outs — all without writing. Run it before any rename or type change.
 
 ## Managed vs git-backed definitions
 
