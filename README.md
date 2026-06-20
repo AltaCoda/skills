@@ -14,13 +14,13 @@ anything in your account.
 Install one product's skill (recommended):
 
 ```bash
-npx skills add AltaCoda/skillz/sendops
+npx skills add AltaCoda/skills/sendops
 ```
 
 Or browse and pick from everything in this repo:
 
 ```bash
-npx skills add AltaCoda/skillz
+npx skills add AltaCoda/skills
 ```
 
 Keep your installed skills current:
@@ -38,7 +38,7 @@ manual re-download.
 
 | Skill | Install | What it does |
 | --- | --- | --- |
-| [`sendops`](./sendops) | `npx skills add AltaCoda/skillz/sendops` | In-agent guide to [SendOps](https://sendops.dev) — AWS SES setup, domains & DKIM, production access, Lists & Segments, CEL predicates, deliverability reports, git-synced templates. |
+| [`sendops`](./sendops) | `npx skills add AltaCoda/skills/sendops` | In-agent guide to [SendOps](https://sendops.dev) — AWS SES setup, domains & DKIM, production access, Lists & Segments, CEL predicates, deliverability reports, git-synced templates. |
 
 ## How this repo is maintained
 
