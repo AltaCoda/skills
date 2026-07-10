@@ -5,52 +5,55 @@ description: >-
   plane on AWS SES. Use this skill whenever the user works with SendOps or wants
   help with: connecting an AWS/SES account, verifying domains and DKIM, leaving
   the SES sandbox (production access), building Contact Lists or Segments,
-  writing CEL segment predicates, defining contact attributes, reading
+  writing SendQL segment predicates, defining contact attributes, building Drip
+  Workflows / automated journeys in the `.flow` (SendFlow) language, reading
   deliverability / engagement / per-message reports, the undeliverable list vs.
   the suppression list, bounce and complaint hygiene, open/click tracking, or
   git-synced email templates. Trigger it even when the user never says "SendOps"
   by name — "why aren't my opens being tracked", "segment trial users who
-  haven't opened in 30 days", "my domain won't verify", or "suppression list vs
-  undeliverable list" all mean this skill should be consulted. It makes a complex
-  product feel simple: explains the concepts, drafts the exact CEL, lists, and
-  attribute schemas, interprets reports, and says exactly where to click.
+  haven't opened in 30 days", "send a welcome drip when someone signs up", "my
+  domain won't verify", or "suppression list vs undeliverable list" all mean
+  this skill should be consulted. It makes a complex product feel simple:
+  explains the concepts, drafts the exact SendQL, lists, attribute schemas, and
+  `.flow` workflows, interprets reports, and says exactly where to click.
 ---
 
 # SendOps Co-pilot
 
 SendOps ([sendops.dev](https://sendops.dev)) is an **email-infrastructure control plane** on AWS SES. It sets up SES, EventBridge, and supporting resources **inside the customer's own AWS account** (via CloudFormation) and then manages templates, audiences, reporting, deliverability, and analytics on top. **It is not a proxy** — email always sends through the customer's SES directly. Positioning: *"Send more. Pay the same."*
 
-This skill exists because SendOps has grown powerful enough that a normal user can feel lost — between SES setup, Lists and Segments, reports, and templates there's a lot of surface area. Your job is to be the calm expert sitting next to them: translate what they want into the right SendOps concept, hand them the exact thing to create (a CEL predicate, a list, an attribute, a DNS record), and point them to the precise screen or endpoint. You make the product feel small.
+This skill exists because SendOps has grown powerful enough that a normal user can feel lost — between SES setup, Lists and Segments, reports, and templates there's a lot of surface area. Your job is to be the calm expert sitting next to them: translate what they want into the right SendOps concept, hand them the exact thing to create (a SendQL predicate, a list, an attribute, a DNS record), and point them to the precise screen or endpoint. You make the product feel small.
 
-This skill is a **single self-contained file**: a short router (this part) followed by four in-depth reference sections (Setup & onboarding, Lists & Segments, Reports & deliverability, Templates). Everything you need is below — read the matching section before giving detailed guidance.
+This skill is a **single self-contained file**: a short router (this part) followed by five in-depth reference sections (Setup & onboarding, Lists & Segments, Drip Workflows, Reports & deliverability, Templates). Everything you need is below — read the matching section before giving detailed guidance.
 
 ## What this skill does and doesn't do
 
 This is a **guidance skill**. It does not call the SendOps API, hold credentials, or change anything in the user's account on its own. It helps the user *think, draft, and navigate*:
 
 - **Explain** any SendOps concept in plain terms and how it maps to AWS SES underneath.
-- **Draft** the exact artifact the user needs — a CEL segment predicate, a List definition, an attribute-registry entry, a template manifest snippet, DNS records to paste — ready for them to apply.
+- **Draft** the exact artifact the user needs — a SendQL segment predicate, a List definition, an attribute-registry entry, a template manifest snippet, DNS records to paste — ready for them to apply.
 - **Interpret** what a report or a status badge is telling them, and what to do about it.
 - **Navigate** — tell them which page, tab, button, or endpoint to use.
 
-When something requires an action in SendOps, say so explicitly and give the path. Don't imply you performed it. Typical phrasing: *"Here's the predicate — save it as a Segment via `POST /api/v1/orgs/{slug}/segments`, or commit it to your connected repo as a `.cel` file."* If the user has the SendOps Public API or its MCP server connected as a tool in this session, you may additionally read live data through it — but never assume that; the baseline is advice, not execution.
+When something requires an action in SendOps, say so explicitly and give the path. Don't imply you performed it. Typical phrasing: *"Here's the predicate — paste it into the Segment editor (Audience → Segments → New segment), save it via `POST /api/v1/orgs/{slug}/segments`, or commit it to your connected repo as a `.sendql` file."* If the user has the SendOps Public API or its MCP server connected as a tool in this session, you may additionally read live data through it — but never assume that; the baseline is advice, not execution.
 
 ## How to help — the loop
 
-1. **Locate the request on the product map** (below). Most confusion is really "which of these four areas am I in?" Name it for the user.
-2. **Read the matching reference section below** before answering anything non-trivial — the details (CEL grammar, classification rules, sync lifecycle) are exact and easy to get subtly wrong from memory.
+1. **Locate the request on the product map** (below). Most confusion is really "which of these five areas am I in?" Name it for the user.
+2. **Read the matching reference section below** before answering anything non-trivial — the details (SendQL grammar, classification rules, sync lifecycle) are exact and easy to get subtly wrong from memory.
 3. **Hand over a concrete artifact**, not just prose. A user who asked "how do I segment dormant trial users" should leave with a predicate they can paste.
 4. **Say where it goes and what happens next** (which screen / endpoint; whether it's view-only; whether a sync or refresh is needed).
-5. **Flag the gotchas** that bite people — null handling in CEL, tracking that isn't actually on, suppression vs. undeliverable, sandbox limits.
+5. **Flag the gotchas** that bite people — absence handling in SendQL, tracking that isn't actually on, suppression vs. undeliverable, sandbox limits.
 
-## Product map — the four areas
+## Product map — the five areas
 
 Route the user to the right reference section below. Read the section before giving detailed guidance.
 
 | If the user is asking about… | Area | Read |
 | --- | --- | --- |
 | Connecting AWS, the CloudFormation stack, verifying a domain/DKIM, getting out of the SES sandbox (production access), importing an existing ("brownfield") SES setup, channels = config sets, why a config set shows "tracking off" | **Setup & onboarding** | § Reference: Setup & onboarding |
-| Contact Lists, Segments, CEL predicates, the attribute registry, who's in an audience and why, preview/dry-run, managed vs. git-backed definitions | **Lists & Segments** | § Reference: Lists & Segments |
+| Contact Lists, Segments, SendQL predicates, the attribute registry, who's in an audience and why, preview/dry-run, managed vs. git-backed definitions | **Lists & Segments** | § Reference: Lists & Segments |
+| Drip Workflows, automated journeys/"drips", the `.flow` (SendFlow) language, enroll/trigger a contact, wait/branch/split, send steps, enrollment scope, re-entry, per-workflow frequency cap, manual send approval | **Drip Workflows** | § Reference: Drip Workflows |
 | Deliverability / engagement / per-message / template reports, opens & clicks, ISP breakdown, the undeliverable list, the suppression list, bounces & complaints | **Reports & deliverability** | § Reference: Reports & deliverability |
 | Email templates, the connected Git repo, the manifest, Handlebars, test sends, deploying templates to SES, exporting existing SES templates | **Templates** | § Reference: Templates |
 
@@ -61,16 +64,16 @@ If a request spans areas (common — e.g. "segment everyone who bounced, then st
 - **Control plane, not proxy.** SendOps configures the customer's AWS account and reports on it. Sending happens via their SES. If SES is down or in sandbox, SendOps can't send around that.
 - **Channel = SES configuration set**, exactly one-to-one. "Set up a channel" means "this maps to a SES config set."
 - **AWS account is shared-capable.** Several SendOps orgs can link one AWS account: the first provisions the CloudFormation stack; later orgs *join* with no deploy. An identity or config set is "active" in at most one org at a time.
-- **List ≠ Segment.** A **List** is membership you *assign* (static, explicit add/remove). A **Segment** is membership you *describe* with a CEL predicate (dynamic; contacts flow in and out as their data changes). This single distinction drives everything downstream — see the Lists & Segments reference.
+- **List ≠ Segment.** A **List** is membership you *assign* (static, explicit add/remove). A **Segment** is membership you *describe* with a SendQL predicate (dynamic; contacts flow in and out as their data changes). This single distinction drives everything downstream — see the Lists & Segments reference.
 - **Membership ≠ mailability.** Being in a List or Segment does not mean SendOps will email someone. Consent and suppression are enforced separately, at send time.
 - **Undeliverable list ≠ Suppression list.** The **suppression list** mirrors the AWS SES suppression list. The **undeliverable list** is SendOps's own derived view based on configurable rules over bounce/complaint history. They answer different questions — see the reports reference.
 - **Git is the source of truth for templates** (and, when a repo is connected, for segment/attribute *definitions* too). Data — list membership, attribute values — never lives in git; it lives in SendOps.
-- **The audience UI is partly writable — the surface differs by object.** **Lists** are fully managed in the dashboard: create, edit, delete, and add/remove members (permission `lists.manage`). **Segments** can be *paused/resumed* in the UI (`segments.manage`) but have **no in-app predicate editor** — you author the CEL definition via the API or a connected GitHub repo. **Attribute definitions** are managed via the API (now writable) or git, not a dashboard form. So "click New List" is fine, but "click New Segment" is not — for a Segment, hand the user the predicate and an authoring path. (Verify against their build if they say the UI differs; products move.)
+- **The audience UI is writable — the surface differs by object.** **Lists** are fully managed in the dashboard: create, edit, delete, and add/remove members (permission `lists.manage`). **Segments** have a full in-app editor (`segments.manage`): create and edit the SendQL definition with live validation and preview, pause/resume, and version history — or author via the API / a connected GitHub repo instead. Git-backed segments are read-only in the app (edit them in the repo). **Attribute definitions** are managed via the API (writable) or git, not a dashboard form. (Verify against their build if they say the UI differs; products move.)
 - **Reports refresh manually**, not live. If numbers look stale, the user may need to hit refresh.
 
 ## Tone
 
-Be the friendly expert. Lead with the answer, then the artifact, then where it goes. Prefer a worked example over abstract description. When you hit a genuine limitation of the current release (no in-app segment *predicate* editor, no v1 write endpoint for lists/segments, no dedicated-IP management), say so plainly and give the real path forward rather than pretending. Keep AWS/SES accuracy high — users trust this skill precisely because it tells them the truth about what's happening under the hood.
+Be the friendly expert. Lead with the answer, then the artifact, then where it goes. Prefer a worked example over abstract description. When you hit a genuine limitation of the current release (no v1 write endpoint for lists/segments, no dedicated-IP management), say so plainly and give the real path forward rather than pretending. Keep AWS/SES accuracy high — users trust this skill precisely because it tells them the truth about what's happening under the hood.
 
 ---
 
@@ -93,7 +96,7 @@ Steps are tracked in `org_onboardings` + `onboarding_steps`. Each step is `pendi
 
 The user runs a **CloudFormation stack** in their AWS account from a SendOps-hosted template. That stack creates a cross-account IAM role (`SendOpsRole`) that SendOps assumes via STS, plus the event plumbing. The user then pastes the **role ARN** + **region** into SendOps, which validates by performing an `AssumeRole`.
 
-What the CloudFormation stack provisions (current template **version 12** — 7 resources):
+What the CloudFormation stack provisions (current template **version 13** — 7 resources; v13 added the `ses:CreateContactList` permission so SendOps can provision the org's contact list):
 
 | Resource | What it is |
 | --- | --- |
@@ -127,7 +130,7 @@ When advising: if "this account is already connected" appears, the user almost c
 
 After Connect, an async **stack validation** job probes the deployed resources: config set present, EventBridge rule + targets correct, SES account reachable, write access, channel-settings access, template write access. It also reads SES account status and records whether the account is **in the SES sandbox** (informational — validation still passes in sandbox).
 
-> The current required CloudFormation **template version is 12**. If the user later tries to request production access on an older stack, SendOps returns `CF_TEMPLATE_OUTDATED` — they must update the stack first. If you see that error, the fix is "update your CloudFormation stack to the latest SendOps template," not anything in the form.
+> The current required CloudFormation **template version is 13**. If the user later tries to request production access on an older stack, SendOps returns `CF_TEMPLATE_OUTDATED` — they must update the stack first. If you see that error, the fix is "update your CloudFormation stack to the latest SendOps template," not anything in the form.
 
 ## 3. Domain verification & DKIM
 
@@ -159,7 +162,7 @@ When DKIM verifies, SendOps marks the domain verified, advances onboarding, and 
 New SES accounts are **in the sandbox**: they can only send to verified identities and have tiny quotas. Production access is requested **through SendOps**, which calls SES `PutAccountDetails` on the customer's account.
 
 - Permissions: `ses.production_access.view` (see status), `ses.production_access.submit` (request).
-- The request form validates: **mail type** is `TRANSACTIONAL` or `PROMOTIONAL`; **website URL** is valid http(s); **use-case description** is **≥ 50 characters**; no other open request; and the **CloudFormation template is current (v12)**.
+- The request form validates: **mail type** is `TRANSACTIONAL` or `PROMOTIONAL`; **website URL** is valid http(s); **use-case description** is **≥ 50 characters**; no other open request; and the **CloudFormation template is current (v13)**.
 - After submit, SendOps polls SES for the outcome on a decaying schedule, timing out to `failed` after ~14 days.
 
 > **Gotcha — AWS never signals "denied."** SES exposes "production access enabled = true/false" but no denial reason. So a granted request is detected; a **denied** one simply keeps reading as "under review" until the ~14-day timeout flips it to `failed`. If a user's request sits in review for days, that may be a silent denial — advise them to check the AWS Support case directly.
@@ -190,6 +193,8 @@ Every **channel** maps to exactly one SES **configuration set** (`ses_config_set
 | `sesmail-onboarding` | BOUNCE | off |
 
 (All default to TLS `REQUIRE`, sending enabled.) Provisioning is idempotent — it skips if channels already exist.
+
+> **The names in the table are the logical channel names.** The actual SES **configuration-set name is namespaced per workspace** as `sesmail-{ses_namespace}--{slug}` — e.g. the marketing channel for org namespace `acme` is the SES config set `sesmail-acme--marketing`. The namespace comes from the org and prevents two orgs that share one AWS account from colliding on SES's flat per-account config-set namespace (same reasoning as template namespacing). So if a user sees `sesmail-acme--transactional` in the SES console, that's the `transactional` channel — correct and expected, not a duplicate.
 
 ### The "tracking off = no event destination" trap
 
@@ -234,14 +239,14 @@ When sync runs:
 
 ---
 
-# Reference: Lists & Segments — audiences, CEL, attributes
+# Reference: Lists & Segments — audiences, SendQL, attributes
 
-Everything about building audiences in SendOps. Read it before drafting a List, a Segment predicate, or an attribute schema — the CEL grammar and the null contract are exact and very easy to get subtly wrong from memory.
+Everything about building audiences in SendOps. Read it before drafting a List, a Segment predicate, or an attribute schema — the SendQL grammar and the absence contract are exact and very easy to get subtly wrong from memory.
 
 ## The one distinction that drives everything
 
 - **List** = membership you **assign**. Static. You explicitly add/remove contacts; a contact stays in until removed (or deleted). Think "imported CSV," "beta testers," "everyone from the conference."
-- **Segment** = membership you **describe**. Dynamic. You write **one CEL predicate**; a contact is a member iff the predicate is `TRUE` for them **right now**. As their data changes, they flow in and out automatically.
+- **Segment** = membership you **describe**. Dynamic. You write **one SendQL predicate**; a contact is a member iff the predicate is `TRUE` for them **right now**. As their data changes, they flow in and out automatically.
 
 Both record membership as an **append-only event log** (no derived "current members" table). "Who's in it now" is computed at read time as the latest event per contact:
 
@@ -257,114 +262,118 @@ This is why **membership over time** is a first-class thing: SendOps keeps the f
 The audience dashboard is **partly writable**, and the surface differs by object:
 
 - **Lists** — full CRUD in the dashboard: create, edit, delete, and add/remove members (permission `lists.manage`). Members can be added by **email** (the contact is auto-created if new) or by existing contact id, with per-row results.
-- **Segments** — you can **view** the predicate, eval class, status, and members, and **pause/resume** a *managed* Segment (`segments.manage`). There is **no in-app predicate editor** — you author the CEL definition via the API or git. Git-backed segments have no pause button; you pause them by removing the source file from the repo.
+- **Segments** — full authoring in the dashboard (`segments.manage`): a SendQL editor with live validation, diagnostics, dry-run preview, and version history, plus pause/resume. Or author via the API or git instead. Git-backed segments are read-only in the app (the repo is ground truth) and have no pause button; you pause them by removing the source file from the repo.
 - **Attribute definitions** — managed via the **API** (now writable, see below) or a connected repo. No dashboard form for the registry.
 
-To author Segments and attribute definitions, the user uses **either**:
+To author Segments and attribute definitions, the user uses one of:
 
-1. **The session API** — `POST/PUT/DELETE /api/v1/orgs/{slug}/segments` (and the lists/attributes equivalents). Full CRUD; dashboard-token auth.
-2. **A connected GitHub repo** — definitions live as files; SendOps syncs them. (See "Managed vs git-backed.")
+1. **The dashboard editor** (Segments only) — Audience → Segments → New segment.
+2. **The session API** — `POST/PUT/DELETE /api/v1/orgs/{slug}/segments` (and the lists/attributes equivalents). Full CRUD; dashboard-token auth.
+3. **A connected GitHub repo** — definitions live as files; SendOps syncs them. (See "Managed vs git-backed.")
 
 > **Public API v1** (`/v1/...`, API-key auth) — read vs. write differs by object:
 > - **Lists & Segments are read-only**: `GET /v1/lists` (+ `/{id}`, `/{id}/members`), `GET /v1/segments` (+ `/{id}`, `/{id}/members`), plus the read-class `POST /v1/segments/preview`. There is **no** v1 write endpoint — "create a segment via the public API" is not possible today; direct them to the session API or git.
 > - **Contacts are full read + write** (SND-907) — the contact-roster write surface. Reads (`GET /v1/contacts`, `GET /v1/contacts/{email}`) use `api.contacts.view`; writes (`POST /v1/contacts`, `PUT`/`PATCH`/`DELETE /v1/contacts/{email}`, and async bulk `POST /v1/contacts/bulk` → `202` + `job_id`, polled via `GET /v1/contacts/bulk/{job_id}`) use scope **`api.contacts.manage`**. Contacts are keyed by **email** (URL-encode `@` as `%40`); `POST` creates, `PUT` replaces (omitted fields cleared), `PATCH` diff-merges (a `null` attribute clears that key), `DELETE` archives (idempotent). Writes accept an **`Idempotency-Key`** header (24 h replay) and can manage **static-List** membership inline via a `lists` directive (`add`/`remove`/`set` on POST/PATCH, an exact array on PUT). Attribute values are validated against the registry — an unknown key or type mismatch is `422 attribute_validation_failed`; in bulk that fails only the offending row, not the batch.
 > - **Attribute definitions are writable** — the first v1 write surface (SND-906): `POST /v1/attributes`, `PUT /v1/attributes/{id}`, `DELETE /v1/attributes/{id}`, and the zero-write impact preview `POST /v1/attributes/{id}/preview`, all under scope **`api.attributes.manage`** (reads use `api.attributes.view`).
-> - **Broadcasts are read + preview**: `GET /v1/broadcasts` (+ `/{id}`, `/{id}/results`) and `POST /v1/broadcasts/{id}/preview` (scope `api.broadcasts.view`).
+> - **Broadcasts are full read + write** — you can create and send a broadcast over the API. Reads (`GET /v1/broadcasts` (+ `/{id}`, `/{id}/results`) and `POST /v1/broadcasts/{id}/preview`) use `api.broadcasts.view`; the writes — `POST /v1/broadcasts` (create, in template or inline-HTML mode), `POST /v1/broadcasts/{id}/send` (send now or schedule), `POST /v1/broadcasts/{id}/test` (test send), `DELETE /v1/broadcasts/{id}` — use scope **`api.broadcasts.manage`**. Consent and suppression are enforced at send time. (Edit/reschedule/cancel-after-send remain dashboard-only.)
+> - **Activities are read + write** — the custom-behavior ingest surface. Ingest via `POST /v1/activities` (single or a batch of ≤ 1000 events) under scope **`api.activities.write`** — a write-only append (unknown identities get a stub contact, which carries no consent); reads (`GET /v1/activities`, `GET /v1/contacts/{id}/activities`, `.../activities/summary`) use `api.activities.view`. Ingest can carry an idempotency key and a `dedup_mode` (`retry` vs `once`) to control whether a repeated signal is collapsed — but the real duplicate-send guard is a workflow's re-entry policy, not this (see § Reference: Drip Workflows).
+> - **Workflows are read + dry-run only**: `GET /v1/workflows` (+ `/{id}`, `/{id}/runs`, `/exits`, `/funnel`, `/runs/{runId}/timeline`) and the simulate-only `POST /v1/workflows/{id}/dry-run`, all under scope **`api.workflows.view`**. There is **deliberately no workflows *manage* scope** — you cannot create or edit a workflow over the public API; author it in the dashboard or git. (The `.flow` source itself isn't exposed over the API — metadata, run counts, and analytics only.)
+> - **Assets are read-only**: `GET /v1/assets` (+ `/{id}`) under scope **`api.assets.view`** — the org's git-sourced image library (source path, CDN URL, content hash, dimensions). Assets are managed via the connected git repo, not the API.
 
-So your job for any "I want an audience of X" request is to **hand them the artifact** (a `.cel` predicate, or a list definition) and tell them which of the two authoring paths to use.
+So your job for any "I want an audience of X" request is to **hand them the artifact** (a SendQL predicate, or a list definition) and tell them which authoring path to use.
 
-## The CEL environment (the exact surface)
+## The SendQL language (the exact surface)
 
-Segment predicates are written in **CEL** (Google's Common Expression Language, cel-go v0.21.0). A predicate must evaluate to a **bool**. The environment exposes exactly four namespaces plus a few built-ins — nothing else. Each saved segment is stamped with a **profile version** (currently `1`).
+Segment predicates are written in **SendQL**, SendOps's segment-query language. A predicate is one expression that is true or false per contact. Each saved segment is stamped with a **profile version** (currently `1`).
 
-### `contact.<attr>` — your registered attributes
+### Structure
 
-Per-org custom attributes from the **attribute registry** (see below). Reference as `contact.tier`, `contact.score`, `contact.signup_date`, etc. Attribute names match `^[a-z][a-z0-9_]{0,62}$`.
+Terms combine with `and`, `or`, `not`, and parentheses. Precedence, loosest to tightest: `or` → `and` → `not` — so `a or b and c` means `a or (b and c)`; use parentheses when in doubt.
 
-Typed by the registry. The compiler emits the right cast: numbers, booleans, datetimes, strings, enums (see Attribute registry). **Absent attributes are NULL — read the null contract below before relying on this.**
+### `attr.<name>` — your registered attributes
 
-### `engagement.*` — six derived, live fields
+Per-org custom attributes from the **attribute registry** (see below). Names match `^[a-z][a-z0-9_]{0,62}$`; always written with the `attr.` prefix, so registry names can never collide with keywords.
 
-Computed live from message events (not stored attributes). Contacts with no events get **0** (counters) or the unix epoch (timestamps) — **never null**.
-
-| Field | Type | Meaning |
-| --- | --- | --- |
-| `engagement.opens_30d` | number | unique opens, rolling 30 days |
-| `engagement.clicks_30d` | number | clicks, rolling 30 days |
-| `engagement.sends_30d` | number | sends, rolling 30 days |
-| `engagement.last_open_at` | datetime | last open |
-| `engagement.last_click_at` | datetime | last click |
-| `engagement.last_send_at` | datetime | last send |
-
-### `consent.*` — four boolean fields
-
-Mirrored from topic/unsubscribe state. Absent → **false** (never null).
-
-| Field | Meaning |
+| Form | Example |
 | --- | --- |
-| `consent.subscribed` | subscribed to at least one topic |
-| `consent.opted_out` | opted out |
-| `consent.unsubscribed_all` | global unsubscribe |
-| `consent.suppressed` | on the suppression list |
+| Comparison | `attr.score >= 10` (`=`, `!=`, `<`, `<=`, `>`, `>=`) |
+| In a set | `attr.country in ["US", "CA", "MX"]` |
+| String match | `attr.email ends with "@acme.io"`, `attr.name starts with "A"`, `attr.title contains "VP"` |
+| Presence | `has attr.company`, or `attr.tier is known` / `attr.tier is unknown` |
+| Age (date attrs) | `now - attr.signup_date > 7d`, `now - attr.signup_date between 3d and 14d` |
 
-### `list.member("<uuid>")` — cross-reference a List
+Typed by the registry; both sides of a comparison must be the same type (`attr.score > "ten"` is rejected at validation). **Absent attributes are unknown — read the absence contract below before relying on this.**
 
-Boolean function. The argument must be a **string-literal List UUID**: `list.member("0190aa...-...")`. True iff the contact is currently in that List. Lets a Segment build on a List.
+### Event terms — first-class engagement history
 
-### Built-ins for time
+SendQL selects on the **raw event stream** (no fixed rollups). Events: `send`, `delivery`, `open`, `click`, `bounce`, `complaint`, `reject`, `delivery_delay`. Four shapes:
 
-- `now()` — current time (folded to evaluation time). **Using `now()` makes the segment "sweep-class"** (see eval classes).
-- `duration("720h")` — a Go duration string (720h = 30 days).
-- `timestamp("2026-01-01T00:00:00Z")` — RFC 3339 literal.
+| Shape | Meaning | Example |
+| --- | --- | --- |
+| `count(<event>) <op> N` | how many times it happened | `count(open within 30d) >= 3` |
+| `exists(<event>)` | at least once | `exists(click within 7d)` |
+| `sum\|avg\|min\|max(<field> of <event>) <op> N` | aggregate a numeric event field | `sum(processing_ms of delivery within 7d) < 10000` |
+| `last\|first(<event>) <op> <time>` | most recent / earliest occurrence | `last(open) < now - 14d` |
 
-Temporal arithmetic is allowed: `engagement.last_open_at < now() - duration("720h")`.
+Narrow any event with:
 
-### Operators & methods available
+- `where <condition>` — filter on event properties, e.g. `click where url contains "/pricing"` (properties include `subject`, `template`, `sender_domain`, `url` on click, `type`/`sub_type` on bounce).
+- `within <duration>` — rolling window, e.g. `open within 30d`.
+- `between <date> and <date>` — absolute window.
 
-- Comparison: `==`, `!=`, `<`, `<=`, `>`, `>=` (numeric comparisons work across int/double).
-- Boolean: `&&`, `||`, `!`.
-- Membership: `value in ["a", "b", "c"]` — RHS must be a **list literal**, max 100 elements.
-- String methods (receiver form): `contact.email.endsWith("@acme.com")`, `.startsWith(...)`, `.contains(...)` — compile to SQL `LIKE`.
-- Presence: `has(contact.tier)` — true iff the attribute is set. **This is the only macro enabled.**
+### Consent and membership terms
 
-### Explicitly NOT supported (don't draft these)
+| Term | Selects contacts who… |
+| --- | --- |
+| `subscribed to "<topic>"` | are opted in to a named topic |
+| `opted out of "<topic>"` | have opted out of a named topic |
+| `unsubscribed from all` | are globally unsubscribed |
+| `suppressed` | are on the suppression list |
+| `in list "<key>"` | are a member of a named List (by its stable key) |
+| `in segment "<key>"` | are a member of another Segment |
 
-- `??` null-coalescing — **not supported** (fail closed).
-- Ternary `cond ? a : b` — **not supported**.
-- Comprehension macros (`.exists`, `.all`, `.map`, `.filter`) — **disabled**.
-- Arbitrary function calls; map/struct literals; list literals anywhere except the RHS of `in`.
-- Reserved roots that can't be attribute names: `contact`, `engagement`, `consent`, `list`, `now`, `duration`, `has`.
+### Durations, dates, and `now`
+
+- Durations: number + unit, no space — `30s`, `15m`, `24h`, `7d`, `2w`, `6mo`, `1y`.
+- Dates: `YYYY-MM-DD`.
+- `now` is evaluation time; `now - 14d` is a point in the past. **Any time-relative term (`now`, `within`, `last`/`first`, age) makes the segment "sweep-class"** (see eval classes).
+
+### Reserved words
+
+Keywords can't be bare event/property names: `all and avg between contains count ends exists first from has in is known last list max min not now of opted or out segment starts subscribed sum suppressed to true false unknown unsubscribed where within with`. Attribute names are always safe behind the `attr.` prefix.
 
 ### Size governors (hard limits — exceeding any is a 422)
 
 - ≤ 200 AST nodes total
 - ≤ 20 nesting depth
 - ≤ 100 elements in any `in [...]`
-- ≤ 8 distinct `engagement.*` references
-- ≤ 8 `list.member(...)` calls
+- ≤ 8 event terms
+- ≤ 8 `in list` / `in segment` terms
 
 If a predicate is rejected for size, simplify (fewer OR branches, smaller `in` lists, or split into two segments).
 
-## ⚠️ The null-handling footgun (read this twice)
+## ⚠️ The absence footgun (read this twice)
 
-A contact is a member of a segment **iff the predicate evaluates to TRUE. NULL, FALSE, and error all exclude.** And **a missing attribute is NULL**, not a default value.
+A contact is a member of a segment **iff the predicate evaluates to TRUE — unknown and false both exclude.** A missing attribute is **unknown**, not a default value; a never-occurred event has **no** `last`/`first` time.
 
 Concretely:
 
-- `contact.tier != "free"` — a contact who has **no `tier` attribute at all** evaluates to NULL → **excluded**. Even though "not free" sounds like it should include them. This surprises everyone.
-- `contact.score > 50` — contacts **without** a `score` are NULL → excluded (they are **not** treated as 0).
+- `attr.tier != "free"` — a contact with **no `tier` attribute at all** is unknown → **excluded**. Even though "not free" sounds like it should include them. This surprises everyone.
+- `attr.score > 50` — contacts **without** a `score` are excluded (they are **not** treated as 0).
+- `last(open) < now - 14d` — a contact who **never opened** is excluded (their last-open isn't "long ago", it's unknown). To include never-openers, add `or count(open) = 0`.
 
-Why: each attribute access compiles to a guarded expression that yields SQL `NULL` when the key is absent, and ClickHouse three-valued logic (`NULL OR TRUE = TRUE`, `NULL AND FALSE = FALSE`) mirrors cel-go's Kleene logic exactly. The two engines agree; the result is "absent → excluded."
+Counts are the safe exception: `count(open within 30d)` is `0` for a contact with no events, so `count(open) = 0` genuinely matches never-openers.
 
 **How to write predicates that mean what the user wants:**
 
-| User intent | Wrong (silently drops attribute-less contacts) | Right |
+| User intent | Wrong (silently drops the unknowns) | Right |
 | --- | --- | --- |
-| "everyone who isn't on the free plan, including unknowns" | `contact.tier != "free"` | `!has(contact.tier) \|\| contact.tier != "free"` |
-| "anyone whose score is over 50" | `contact.score > 50` | `has(contact.score) && contact.score > 50` (explicit) |
-| "people with no tier set" | — | `!has(contact.tier)` |
+| "everyone who isn't on the free plan, including unknowns" | `attr.tier != "free"` | `attr.tier != "free" or attr.tier is unknown` |
+| "anyone whose score is over 50" | — | `attr.score > 50` (explicitly excludes no-score contacts — say so) |
+| "people with no tier set" | — | `attr.tier is unknown` |
+| "went quiet — no open in 30 days, ever-openers only" | — | `count(open) > 0 and last(open) < now - 30d` |
 
-`has(...)`, `engagement.*`, and `consent.*` are **always** non-null, so they're safe to use bare. Only `contact.<attr>` can be null. When you draft any predicate that includes a `contact.*` comparison, **proactively decide and state** how attribute-less contacts should be treated.
+The editor's **absence lint** flags exactly these spots with a non-blocking warning and the guard to add. When you draft any predicate with a `!=`, a `not`, an age term, or `last`/`first`, **proactively decide and state** how contacts missing that data should be treated.
 
 ## Attribute registry
 
@@ -414,16 +423,16 @@ The git layout lives under the repo's manifest (`sendops.json`), alongside templ
 ```json
 {
   "segments": {
-    "high-value": { "path": "audience/high-value.cel", "name": "High value", "description": "Pro plan, engaged" }
+    "high-value": { "path": "audience/high-value.sendql", "name": "High value", "description": "Pro plan, engaged" }
   },
   "attributes": "audience/attributes.json"
 }
 ```
 
-Each `.cel` file contains **only the predicate string**, e.g. `audience/high-value.cel`:
+Each `.sendql` file contains **only the predicate string**, e.g. `audience/high-value.sendql`:
 
 ```
-contact.plan == "pro" && engagement.opens_30d > 5
+attr.plan = "pro" and count(open within 30d) > 5
 ```
 
 Sync behavior:
@@ -441,66 +450,193 @@ Sync behavior:
 A segment is classified by how it must be re-evaluated:
 
 - **incremental** — re-evaluated per-contact when a referenced attribute changes (near-real-time).
-- **sweep** — periodically re-evaluated for the whole population (segments using `now()`/time windows can only be kept fresh by a sweep). The sweep runs roughly every few hours.
+- **sweep** — periodically re-evaluated for the whole population (segments using `now`, `within` windows, or `last`/`first` can only be kept fresh by a sweep). The sweep runs roughly every few hours.
 - **both** — needs both.
 
-So a "dormant 30 days" segment (uses `now()`) is sweep-class: membership updates on the sweep cadence, not instantly. If a user expects a time-window segment to update the instant a clock ticks, explain the sweep.
+So a "dormant 30 days" segment (time-relative) is sweep-class: membership updates on the sweep cadence, not instantly. If a user expects a time-window segment to update the instant a clock ticks, explain the sweep.
 
 ## Copy-paste recipe book
 
-All of these are predicate strings — drop into a `.cel` file or the API body. Adjust attribute names to the user's registry.
+All of these are predicate strings — paste into the Segment editor, a `.sendql` file, or the API body. Adjust attribute names to the user's registry.
 
 **Engaged pro users**
 ```
-contact.plan == "pro" && engagement.opens_30d > 0
+attr.plan = "pro" and count(open within 30d) > 0
 ```
 
-**Dormant — no open in 30 days (and we have sent to them)**
+**Dormant — sent to but no open in 30 days (ever-openers only)**
 ```
-engagement.sends_30d > 0 && engagement.last_open_at < now() - duration("720h")
+count(send within 30d) > 0 and count(open) > 0 and last(open) < now - 30d
 ```
 
 **Trial users who never engaged**
 ```
-contact.plan == "trial" && engagement.opens_30d == 0
+attr.plan = "trial" and count(open within 30d) = 0
 ```
 
 **Not on the free plan — including contacts with no tier set**
 ```
-!has(contact.tier) || contact.tier != "free"
+attr.tier != "free" or attr.tier is unknown
 ```
 
-**High score, explicitly require the attribute**
+**High score (contacts without a score are excluded)**
 ```
-has(contact.score) && contact.score >= 80
+attr.score >= 80
 ```
 
 **One of several tiers**
 ```
-contact.tier in ["pro", "enterprise"]
+attr.tier in ["pro", "enterprise"]
 ```
 
 **Corporate domain only**
 ```
-contact.email.endsWith("@acme.com")
+attr.email ends with "@acme.com"
 ```
 
 **Subscribed and not suppressed (mailable-ish — still re-checked at send)**
 ```
-consent.subscribed && !consent.suppressed
+subscribed to "product-updates" and not suppressed
 ```
 
-**In an existing List and engaged**
+**In an existing List and clicked recently**
 ```
-list.member("PUT-LIST-UUID-HERE") && engagement.clicks_30d > 0
+in list "beta-cohort" and count(click within 30d) > 0
 ```
 
 **Signed up in the last 7 days**
 ```
-has(contact.signup_date) && contact.signup_date > now() - duration("168h")
+now - attr.signup_date < 7d
 ```
 
-When you hand any of these over: (1) confirm the referenced attributes are **registered** and the right **type**, (2) decide the null behavior explicitly, (3) tell them to **preview** it, then (4) save via API or commit the `.cel` to the repo.
+**Clicked the pricing page this week**
+```
+exists(click where url contains "/pricing" within 7d)
+```
+
+When you hand any of these over: (1) confirm the referenced attributes are **registered** and the right **type**, (2) decide the absence behavior explicitly, (3) tell them to **preview** it, then (4) save in the editor / via API, or commit the `.sendql` to the repo.
+
+---
+
+# Reference: Drip Workflows — automated journeys, the .flow language, enrollment, sends & approval
+
+Everything about **Drip Workflows** — automated, multi-step email journeys. Read it before drafting a workflow, explaining enrollment or re-entry, or answering anything about the `.flow` language, send approval, or per-workflow frequency caps. The `.flow` grammar is exact and easy to get subtly wrong from memory.
+
+## What they are
+
+A **Drip Workflow** (a "drip") is an automated journey: a contact **enrolls** on a trigger, then the workflow **waits, branches, and sends** over time — each contact on their own durable timeline — until they **exit**. Welcome sequences, onboarding nudges, cart abandonment, renewal countdowns, win-backs are all drips.
+
+- **Authored in the `.flow` DSL** — a small language called **SendFlow**. It has sequence, branching, bounded loops and waits — everything a journey needs and nothing that would break the auto-laid-out canvas (there is no goto and no unbounded loop, so every workflow renders as a clean top-to-bottom flowchart and provably terminates).
+- **Two live views of one definition** — the dashboard **canvas** and the **source editor** edit the same workflow: change either and the other follows. Comments survive the round-trip.
+- **Same managed-vs-git model as segments.** A workflow is either **managed** (edited in the dashboard, with version history and restore) or **git-backed** (a `.flow` file in the connected repo, declared under a **`workflows`** key in `sendops.json`). Git-backed workflows are **read-only in the app** — editing one via the API returns **409**; the repo is the source of truth. (Same GitHub connection that serves templates and segment/attribute definitions.)
+
+## The `.flow` shape (compact reference)
+
+A workflow is `workflow "<name>" v1 { <settings> <steps> }`. **Settings come first** (all optional), then the ordered **steps**. Conditions after `where` / `when` / `until` and inside `if` are ordinary **SendQL** predicates (same attributes, events, and `activity.<name>` terms as segments — see § Reference: Lists & Segments), evaluated against the one contact at that moment.
+
+**Settings (before any step):**
+
+| Setting | Meaning |
+| --- | --- |
+| `enter on <trigger> [where <condition>]` | The one enrollment trigger. `<trigger>` is a **segment** (`segment "trial-started"`), an **event** (`event click`), a custom **activity** (`activity.purchase`), or a **date** relative to a datetime attribute (`3 days before attr.renewal_date`, also `after`). Optional `where` narrows enrollment to contacts who also match a condition. |
+| `exit "<name>" when <condition>` | A named exit, checked **before every step**; first match wins. Exit names drive the conversion breakdown on the detail page (e.g. `exit "converted" when attr.plan != "trial"`). |
+| `send window <from>-<to> in contact timezone` | Defer any send that comes due outside the window to the next in-window moment, per each contact's timezone (e.g. `9am-6pm`). |
+| `reentry once \| on rematch \| per occurrence` | Re-entry policy (default `once`). |
+| `frequency cap <N> per <duration>` \| `frequency cap off` | Per-workflow frequency-cap override (e.g. `frequency cap 4 per 7 days`); `off` exempts this workflow. Undeclared → the org-wide default applies. |
+| `enroll forward \| existing [since <duration>]` | Enrollment scope on activation (see below). |
+
+**Steps (in order):**
+
+| Statement | Meaning |
+| --- | --- |
+| `send "<template>" [via topic "<name>"] [transactional]` | Send a deployed template. Bare `send "welcome"` inherits the template's default consent lane; `via topic "product-updates"` sends in the marketing lane under a named topic; `transactional` sends in the topic-exempt lifecycle lane. (`via topic` and `transactional` are mutually exclusive; a topic name is a quoted string, though a single bare word like `via topic onboarding` is also accepted.) |
+| `wait <N> <unit>` | Pause for a duration (`wait 2 days`). |
+| `wait until <date or attr.<name>>` | Pause until an absolute date or a contact's datetime attribute. |
+| `wait up to <N> <unit> until <condition> { timeout: … }` | Wait for a condition with a hard deadline; the optional `timeout:` arm runs if the condition never becomes true before the deadline. |
+| `if <condition> { … } [else if … { … }] [else { … }]` | Branch; all arms **rejoin** after the block. |
+| `split { 50%: { … } 50%: { … } }` | Stable random cohorts (weights total 100). |
+| `hold out <N>%` | The named percentage exits here (a control/holdout group); everyone else continues. |
+| `repeat up to <N> every <duration> [until <condition>] { … }` | The only loop — always bounded, with a delay before each pass. |
+| `set attr.<name> = <value>` | Write a contact attribute (respects the registered type; an unknown enum value is rejected at validation). |
+| `add to list "<key>"` | Add the contact to a static List. |
+| `exit` | End the journey here. |
+
+> **Two duration styles.** Workflow-level durations are written in **words** (`wait 2 days`, `every 24 hours`). Inside a condition, SendQL's compact form still applies (`open within 7d`). Don't mix them up.
+
+A worked example:
+
+```text
+workflow "Trial onboarding" v1 {
+  enter on segment "trial-started"
+  exit "converted" when attr.plan != "trial"
+
+  send "welcome" transactional
+  wait 2 days
+  if not exists(open where template = "welcome") {
+    send "welcome-reminder" via topic "onboarding"
+    wait 2 days
+  }
+  send "activation-tips" via topic "onboarding"
+  wait up to 7 days until count(activity.login within 7d) >= 2 {
+    timeout: send "need-a-hand" via topic "onboarding"
+  }
+}
+```
+
+## Enrollment scope — who joins when you activate
+
+A workflow is **draft** until you **activate** it; only active workflows enroll and step contacts. A trigger enrolls contacts *going forward* — but at activation there may already be contacts who match (people already in the segment, contacts whose `renewal_date` is next week). The `enroll` setting decides whether those are pulled in:
+
+- **`enroll forward`** — only contacts who match from activation onward. Existing matches are left alone.
+- **`enroll existing`** — also **back-enroll** contacts who already match (a one-time backfill that runs once at activation). `enroll existing since <duration>` bounds how far back it reaches (e.g. `since 30 days`).
+
+> **The undeclared default depends on the trigger.** Leave `enroll` off and each trigger keeps its natural default: a **segment** trigger **back-enrolls** existing members; **event**, **activity**, and **date-relative** triggers are **forward-only** (there's no sensible "replay every past click"). Forward-only enrollment keys on **when the event actually occurred**, not when SendOps received it — so a late or backfilled historical event, one whose timestamp predates activation, won't enroll a forward-only workflow. A date-relative `enroll existing` **must** carry a `since` window (an unbounded look-back would enroll every contact with any past anchor date).
+
+In the dashboard, `enroll` is a control in the **Flow settings** panel, and the editor previews roughly how many contacts a backfill would enroll (and asks you to confirm) before you activate. When `enroll` is undeclared, the Flow settings card shows the **effective** mode it resolves to — a **Forward only** or **Backfill** badge — so the behavior is visible at a glance.
+
+## Re-entry — can a contact go through twice
+
+By default a contact goes through a workflow **once, ever** (`reentry once`) — a durable, permanent record of "has this contact ever run this workflow," checked every time. To allow re-enrollment after a prior run **finished**, opt into the relaxed mode, which has two spellings that select the **same** behavior and differ only in which trigger reads naturally:
+
+- **`reentry on rematch`** — reads naturally for a **segment** trigger: re-enroll after leaving the trigger segment and matching it again.
+- **`reentry per occurrence`** — reads naturally for an **event** or **activity** trigger: re-enroll on a later occurrence.
+
+Two guardrails always apply regardless of mode: **one live journey per contact per workflow** (a contact already moving through won't start a second concurrent journey), and **converts aren't re-enrolled** (a contact who left through a named exit isn't pulled back in while they still match the trigger).
+
+> **`reentry once` — not activity dedup — is the real duplicate-send guard.** On an `activity.<name>` trigger, `reentry once` is what actually stops a duplicate activity (a retried request, a milestone re-emitted by a sync) from producing a duplicate send. Ingest-level `dedup_mode` (see the API inventory) reduces how often a duplicate activity happens at all, but the re-entry policy is the guarantee that a contact isn't emailed twice. Worst case with `reentry once`: a duplicate *timeline row*, never a duplicate *send*.
+
+## Sends, consent & approval
+
+Every `send` step runs the **same send pipeline as a Broadcast** — the customer's SES, the deployed template, per-contact merge data, one-click List-Unsubscribe — just fired when the contact reaches the step rather than all at once. Two safety gates and one operational switch matter:
+
+- **Frequency cap runs first, then consent.** A `send` is checked against the frequency cap *before* consent is evaluated. A capped send is **skipped, not queued** — the journey moves on.
+- **Consent is re-checked at send time.** A contact who unsubscribes mid-journey is quietly skipped for that send while their journey continues.
+
+> **`transactional` bypasses the consent filter but is STILL subject to the frequency cap.** This trips people up: the topic-exempt lifecycle lane skips the consent/opt-out gate, but a capped-out contact skips a `transactional` step exactly like a marketing one. If a lifecycle workflow (e.g. onboarding nudges) must never be capped, give it its own `frequency cap off`.
+
+> **A per-workflow `frequency cap` REPLACES the org default — it doesn't add to it.** The workflow's own threshold and window are used instead of the org's. But the **count** being compared is still **cross-workflow**: a send here counts against, and alongside, sends from every other workflow to the same contact — only the threshold/window are workflow-specific.
+
+**Manual send approval** — for workflows where a person should sign off before mail goes out, turn on **Hold sends for approval**. This is an **operational switch**, not part of the `.flow` file — it takes effect immediately, creates no new version, and **works on git-backed workflows too**. While on, every due send enters an **awaiting approval** state and collects in the workflow's **Approvals** panel, where a person acts per row or in bulk:
+
+| Action | Effect |
+| --- | --- |
+| **Approve** | Send now — still honoring the send window, consent, and frequency cap |
+| **Skip** | Don't send this email; the contact's journey continues to the next step |
+| **Cancel** | Don't send; end this contact's journey |
+
+Workflows with sends waiting show an amber count badge on the list and the detail header. The per-contact **run timeline** surfaces exactly which step a journey took and **why a send was skipped** (capped, unsubscribed, held).
+
+## Public API — read + dry-run only
+
+The Public API can **read** workflows and **dry-run** a contact through one, but **cannot create or edit** them (there is deliberately no workflows *manage* scope — see the API inventory in § Reference: Lists & Segments). `POST /v1/workflows/{id}/dry-run` evaluates every condition against a real contact so you see exactly which path they'd take — nothing is sent or written. To author or change a workflow, use the dashboard or git.
+
+## Where to click
+
+- **Author / edit:** the **Workflows** area → the workflow's **canvas** and **source** tabs (two views of the same `.flow`).
+- **Enrollment scope & frequency cap & approval hold:** the **Flow settings** panel on the workflow.
+- **Review held sends:** the workflow's **Approvals** panel.
+- **See what happened:** the detail page — run counts by status, the per-node **funnel** on the canvas, the **exit breakdown**, and a per-contact **timeline**.
+- **Move a managed workflow into git** (or a git one back to managed): **Promote** opens a PR into the repo; **Adopt** brings a git-backed workflow under dashboard editing.
 
 ---
 
@@ -670,7 +806,7 @@ The repo declares its templates in **`sendops.json`** (at the repo root, or unde
     }
   },
   "images": ["static/logo.png"],
-  "segments": { "high-value": { "path": "audience/high-value.cel", "name": "High value" } },
+  "segments": { "high-value": { "path": "audience/high-value.sendql", "name": "High value" } },
   "attributes": "audience/attributes.json"
 }
 ```
