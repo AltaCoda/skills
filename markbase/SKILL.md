@@ -1,13 +1,13 @@
 ---
 name: markbase
-description: Use this skill whenever the user wants to read, write, search, query, or organize content in a Markbase workspace, or whenever they mention Markbase, `_markbase.md`, `_schema.md`, or paths in `workspace/...` form. Markbase is a hosted Markdown document store reached over MCP — with typed collections, per-folder conventions, targeted edits, optimistic concurrency, document freezes, and soft-delete. Activate this skill before any first read or write so conventions are honored from the start. Re-read it if the agent's behavior with Markbase tools feels off.
+description: Use this skill whenever the user wants to read, write, search, query, or organize content in a Markbase workspace, or whenever they mention Markbase, `_markbase.md`, `_schema.md`, or paths in `workspace/...` form. Also use it to connect Markbase in the first place — "connect/install/set up Markbase", "add the Markbase MCP server", or any Markbase request made when no Markbase tools are in the tool list; the skill carries the per-host MCP registration steps. Markbase is a hosted Markdown document store reached over MCP — with typed collections, per-folder conventions, targeted edits, optimistic concurrency, document freezes, and soft-delete. Activate this skill before any first read or write so conventions are honored from the start. Re-read it if the agent's behavior with Markbase tools feels off.
 ---
 
 # Markbase
 
 Markbase is a hosted Markdown document store you access over MCP. Content lives in organizations → workspaces → folders → `.md` files (free-form documents) or UUIDv7-named records inside typed collections. Two filenames are reserved by the product: `_markbase.md` (per-folder conventions, walk-up resolution; agent- or human-authored with the `agent_md.write` scope, delete is dashboard-only) and `_schema.md` (typed-collection contract).
 
-**The tool surface, capability inventory, and per-host install steps are dynamic — they live at the agent-curated docs and change as the product evolves. Always fetch the index before acting. Don't rely on what this skill says about specifics; this skill is the posture, the docs are the API.**
+**The tool surface and capability inventory are dynamic — they live at the agent-curated docs and change as the product evolves. Always fetch the index before acting. Don't rely on what this skill says about specifics; this skill is the posture, the docs are the API.** The one exception is the connection steps below, which are inline on purpose: an agent that isn't connected yet may have no way to fetch anything, and "install this skill, then ask your agent to connect" has to work from a standing start.
 
 The agent docs index:
 
@@ -21,7 +21,36 @@ Fetch it first. Everything else — tool reference, host-specific install steps,
 https://api.markbase.cloud/mcp
 ```
 
-OAuth 2.1 with PKCE and DCR. If Markbase tools aren't visible in your tool list, the connection isn't wired yet — fetch the index above and follow it to the install steps for your host.
+MCP streamable HTTP, OAuth 2.1 with PKCE and DCR. No API keys, no stdio transport, no self-host.
+
+## Connecting — do this first if Markbase tools aren't in your tool list
+
+Installing this skill does **not** connect you: the skill is orientation, the MCP server is the connection. Someone who has just run `npx skills add AltaCoda/skills/markbase` is one step from working and expects you to finish the job, so register the server in the host you are running in rather than handing them a documentation link.
+
+**Ask before you touch a config file**, and merge into what is already there — never overwrite one. Restarting the host is the user's call, not yours.
+
+- **Claude Code** — one command, no file editing:
+  ```
+  claude mcp add --transport http markbase https://api.markbase.cloud/mcp
+  ```
+- **Codex CLI** — merge into `~/.codex/config.toml`:
+  ```toml
+  [mcp_servers.markbase]
+  url = "https://api.markbase.cloud/mcp"
+  ```
+- **Gemini CLI** — merge into `~/.gemini/settings.json`:
+  ```json
+  { "mcpServers": { "markbase": { "httpUrl": "https://api.markbase.cloud/mcp" } } }
+  ```
+- **Claude Desktop** — merge into `claude_desktop_config.json` (Settings → Developer → Edit config); the user restarts the app afterwards:
+  ```json
+  { "mcpServers": { "markbase": { "transport": { "type": "http", "url": "https://api.markbase.cloud/mcp" } } } }
+  ```
+- **Claude.ai, Cursor, ChatGPT Desktop and other GUI hosts** — you cannot do this one. Give the user the endpoint above and the path to it (Settings → Connectors / MCP → add a custom HTTP MCP server), and say plainly that it has to be added by hand.
+
+Then verify by calling `list_workspaces`. Workspaces back means you are in. **The first call opens a browser tab for OAuth** — if it seems to hang, say so instead of retrying; the user is mid-consent. A `forbidden` after that is a scope problem, not a connection problem.
+
+If your host isn't listed, or a command has changed under you, the current per-host steps live at [/agents/mcp/installing.md](https://help.markbase.cloud/agents/mcp/installing.md) — fetch it rather than improvising.
 
 ## Principles that don't change
 
