@@ -97,23 +97,24 @@ You mint a short-lived address on a SendOps domain, tell the user to forward the
 **With the MCP server connected** it is two tools: `inbox_create` (returns the address, the expiry and a `poll_hint`) then `inbox_wait` (blocks up to 25 seconds, returns the moment something lands, and hands you a `cursor` to pass back on the next call). **With only an API key** it is two curls:
 
 ```bash
-# 1. Mint. Nothing is required — a bare POST gets a private, 10-minute inbox.
+# 1. Mint. A bare POST gets a private, 10-minute, UNRESTRICTED inbox (metered).
+#    Pass the user's verified address(es) in allowed_senders to get a restricted one.
 curl -sX POST https://api.sendops.dev/v1/inboxes \
   -H "Authorization: Bearer $SENDOPS_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"ttl": 600, "label": "Northwind receipt"}'
+  -d '{"ttl": 600, "label": "Northwind receipt", "allowed_senders": ["dana@northwind.example"]}'
 # → {"id":"…","address":"k7q2m9xv4p@sndps.com","expires_at":"…","restricted":true,…}
 
 # 2. Long-poll. Returns within ~1s of the mail landing; empty after `wait` seconds.
 #    Loop on the cursor. Your client timeout MUST be longer than `wait`.
 curl -s "https://api.sendops.dev/v1/inboxes/$ID/messages?wait=20&after=$CURSOR" \
   -H "Authorization: Bearer $SENDOPS_API_KEY"
-# → {"messages":[…],"cursor":"1","expires_at":"…"}
+# → {"messages":[…],"cursor":1,"expires_at":"…"}   (cursor is an integer: messages seen so far)
 ```
 
 **What to say to the user, in one breath:** *"Forward it to `k7q2m9xv4p@sndps.com` — it expires at 14:32."* An address handed over without an expiry is an address somebody tries to use tomorrow. And say the privacy line rather than only knowing it: **what they forward is stored by SendOps for the inbox lifetime, then deleted.** Don't ask for something forwarded that the user would not want stored at all, and never offer this as a way to hide mail from their own organisation.
 
-**Recommend verifying a sender, once.** An inbox whose `allowed_senders` are all addresses the user has *proved* they read is **restricted**: mail from anyone else is dropped silently, so it cannot be used to receive a stranger's signup confirmation — which is why a restricted inbox is **exempt from the mint quota and the per-user cap**. An unrestricted org that has not connected AWS gets three mints a day, so this is the difference between the feature working and the feature running out. `inbox_create` defaults `allowed_senders` to *every* address the caller has verified, so the good path is the default one; with an API key, omit the field to get the same behaviour. To verify: `POST /v1/verified-senders {"email":"…"}` sends a six-digit code to that address, then `POST /v1/verified-senders/{id}/confirm {"code":"123456"}` completes it — or the user does it in the dashboard under **Profile → Verified senders**. Revoking a sender later does **not** unrestrict inboxes already minted; the list is frozen at mint.
+**Recommend verifying a sender, once.** An inbox whose `allowed_senders` are all addresses the user has *proved* they read is **restricted**: mail from anyone else is dropped silently, so it cannot be used to receive a stranger's signup confirmation — which is why a restricted inbox is **exempt from the mint quota and the per-user cap**. An unrestricted org that has not connected AWS gets three mints a day, so this is the difference between the feature working and the feature running out. `inbox_create` defaults `allowed_senders` to *every* address the caller has verified, so the good path is the default one. **The API does not default it**: a bare `POST /v1/inboxes` is unrestricted and metered, so with an API key list the verified address(es) explicitly — `GET /v1/verified-senders` returns them. An API key can only name addresses its owning user has verified; `@domain` entries (a domain the organization has verified in SendOps) also count, and are the only kind a client-credentials integration can use, since it has no user to hold a verified address. To verify: `POST /v1/verified-senders {"email":"…"}` sends a six-digit code to that address, then `POST /v1/verified-senders/{id}/confirm {"code":"123456"}` completes it — or the user does it in the dashboard under **Profile → Verified senders**. Revoking a sender later does **not** unrestrict inboxes already minted; the list is frozen at mint.
 
 Four things to get right when you read what comes back:
 
