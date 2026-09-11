@@ -41,7 +41,7 @@ manual re-download.
 | Skill | Install | What it does |
 | --- | --- | --- |
 | [`sendops`](./sendops) | `npx skills add AltaCoda/skills/sendops` | In-agent guide to [SendOps](https://sendops.dev) — AWS SES setup, domains & DKIM, production access, Lists & Segments, SendQL predicates, Drip Workflows, deliverability reports, git-synced templates. |
-| [`markbase`](./markbase) | `npx skills add AltaCoda/skills/markbase` | In-agent guide to [Markbase](https://markbase.cloud) — the MCP-reached Markdown document store: workspaces & paths, typed collections (`_schema.md`), per-folder conventions (`_markbase.md`), targeted edits, optimistic concurrency, document freezes, and soft-delete. Also carries the per-host MCP registration steps, so a CLI agent can finish connecting itself after the install. |
+| [`markbase`](./markbase) | `npx skills add AltaCoda/skills/markbase` | In-agent guide to [Markbase](https://markbase.cloud) — the MCP-reached Markdown document store: workspaces & paths, typed collections (`_schema.md`), per-folder conventions (`_markbase.md`), targeted edits, optimistic concurrency, document freezes, soft-delete, and temporary inboxes (mint a short-lived address so the user can forward you an email, then read it back with its authentication verdicts). Also carries the per-host MCP registration steps, so a CLI agent can finish connecting itself after the install. |
 
 ## How this repo is maintained
 
