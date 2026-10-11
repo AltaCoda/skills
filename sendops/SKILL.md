@@ -36,7 +36,7 @@ Your job is to be the calm expert sitting next to the user: translate what they 
 
 **So the loop is:**
 
-1. **Locate the request on the product map** below — most confusion is really "which of these fourteen areas am I in?" Name it.
+1. **Locate the request on the product map** below — most confusion is really "which of these fifteen areas am I in?" Name it.
 2. **Fetch the matching doc `.md`** (links in the map) *before* giving detailed guidance. The docs are always current; anything you half-remember about grammar, scopes, or exact limits should be re-read there, not recited.
 3. **Hand over a concrete artifact**, not just prose — a predicate the user can paste, a manifest snippet, the DNS records.
 4. **Say where it goes and what happens next** (which screen / endpoint; what permission it needs; whether a refresh or a deploy has to land first).
@@ -88,7 +88,7 @@ Three sites, each with a Markdown index and per-page `.md`:
 
 When in doubt about *where* something lives, fetch the relevant `llms.txt` — it's a titled, described index of every page.
 
-## Product map — the fourteen areas
+## Product map — the fifteen areas
 
 Route the user, then **fetch the linked `.md`** before detailed guidance.
 
@@ -108,6 +108,7 @@ Route the user, then **fetch the linked `.md`** before detailed guidance.
 | "Why isn't this person enrolled / why didn't they get the day-3 email" — enrolment decisions, the reasons a contact was skipped, and how far back the trace goes | **Enrolment decisions** | [`workflows/enrolment-decisions.md`](https://help.sendops.dev/workflows/enrolment-decisions.md) · [`workflows/triggers.md`](https://help.sendops.dev/workflows/triggers.md) |
 | "How do I test a workflow safely / try it on a few people first" — shadow mode, the rehearsal cohort, what gets recorded instead of sent, going live | **Shadow mode** | [`workflows/shadow-mode.md`](https://help.sendops.dev/workflows/shadow-mode.md) · [`workflows/sends-and-approval.md`](https://help.sendops.dev/workflows/sends-and-approval.md) |
 | "How do I deploy templates from my repo" — rendering with React Email/MJML in CI, a pull-request preview of what a merge would change, keeping a diffable copy in git | **Push from CI** | [`api-reference/push-from-ci.md`](https://developers.sendops.dev/api-reference/push-from-ci.md) · [`templates/keeping-a-copy-in-git.md`](https://help.sendops.dev/templates/keeping-a-copy-in-git.md) · [`templates/export-and-import.md`](https://help.sendops.dev/templates/export-and-import.md) · [`templates/react-email.md`](https://help.sendops.dev/templates/react-email.md) |
+| What a plan allows and how much of it is used — "how many workflows can I have", "why was this refused with a plan limit", seats, templates, domains, segments, broadcasts, enrollments, inboxes, inbound, website sites, CDN storage, contacts, overage | **Plans & usage** | No page to fetch: read the numbers live. With MCP, `sending_readiness_check` returns a `plan` block with every axis's `used`, `limit`, `enforced` and `overage`; over the API it is the `plan` block of `GET /v1/account`; the public price list and every plan's limits are `GET https://api.sendops.dev/plans.json`. `used: null` means not counted (never zero). A `plan.version` of `1` is a grandfathered org — nothing reads as enforced, so do not warn it about caps. `contacts` is a ceiling and is never charged for; only Business can go past a cap, and only with `overage_enabled`. A refused action answers 402 `plan_limit_exceeded` naming the axis (`limit_type`) and an `upgrade_url` — relay both, do not retry. |
 
 If a request spans areas (common — e.g. "segment everyone who bounced, then stop emailing them"), name each area and fetch each page you need.
 
