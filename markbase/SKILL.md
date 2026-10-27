@@ -1,7 +1,7 @@
 ---
 name: markbase
 description: >-
-  Use this skill whenever the user wants to read, write, search, query, or organize content in a Markbase workspace, or mentions Markbase, `_markbase.md`, `_schema.md`, or paths in `workspace/...` form. Also use it to connect Markbase — "connect/install/set up Markbase", "add the Markbase MCP server", or any Markbase request made when no Markbase tools are in the tool list; the skill carries the per-host MCP registration steps. Also use it when the user describes an email you cannot see — a receipt, a one-time code, a bounce — or asks for an address to forward something to (Markbase mints a temporary inbox); when you need to see what a webhook sender (Stripe, GitHub, Slack, their own service) actually posts, or the user reaches for ngrok or a request bin (Markbase mints a temporary webhook URL); for "remind me on <date>" (a due date) or "do this every Monday" (a Dispatch schedule). Markbase is a hosted Markdown document store over MCP, with typed collections, per-folder conventions, targeted edits, optimistic concurrency, freezes and soft-delete. Activate this skill before any first read or write so conventions are honored from the start. Re-read it if the agent's behavior with Markbase tools feels off.
+  Use at the start and end of any task on a project that has a Markbase workspace: read the workspace before you begin and write back what you learned when you finish. Also use whenever the user reads, writes, searches or organizes content in Markbase, or mentions Markbase, `_markbase.md`, `_schema.md` or `workspace/...` paths; to connect Markbase ("set up Markbase", or any Markbase request when no Markbase tools are listed; the skill has the per-host MCP steps); when the user describes an email you can't see or wants an address to forward it to (a temporary inbox); when you need to see what a webhook sender actually posts, or the user reaches for ngrok or a request bin (a temporary webhook); and for "remind me on <date>" (a due date) or "do this every Monday" (a Dispatch schedule). Markbase is a hosted Markdown store over MCP with typed collections and per-folder conventions. Load this skill before the first read or write, and re-read it if Markbase calls behave unexpectedly.
 ---
 
 # Markbase
@@ -15,6 +15,18 @@ The agent docs index:
 **https://help.markbase.cloud/agents/index.md**
 
 Fetch it first. Everything else — tool reference, host-specific install steps, concepts (workspaces, documents, typed collections, `_markbase.md`, search), editing, concurrency rules, freezes, troubleshooting — is reachable as a link from there. Follow the links rather than guessing at paths.
+
+## Read the workspace before, write back after
+
+This is the habit that matters most. When a task concerns a project that has a Markbase workspace, that workspace is the team's memory of it: what it is, why it is built that way, what was already decided, where work stopped. Use it at both ends of the task.
+
+**Before you start.** Find the project's workspace — usually named after the project; the repo's `CLAUDE.md` or `AGENTS.md` may name it, otherwise list the workspaces and pick the match. Read its root `_markbase.md` first: it says how this workspace is laid out and what to read. Then read only what bears on the task — the overview or architecture, past decisions on this area, current work or a handoff — found through the doc listing and search, not by reading everything. Take from it the intent, the constraints and the options already rejected. Where it disagrees with the code, the code is what the system actually does: note the mismatch and correct the workspace afterwards.
+
+**When you finish**, or as soon as something worth keeping comes out of the task — a decision and why it was made, something learned about the code, a document that turned out to be wrong, where you stopped and what comes next — write it back in the workspace's own conventions. Ask the user first if that `_markbase.md` or the user's own instructions say to. Write what is true now, not what was planned.
+
+**Keep it proportionate.** Skip both ends for a quick request that has nothing to do with the project. When nothing worth keeping came out of a task, write nothing: no notes that repeat the commits, no record of what you merely read. If the project has no workspace, or Markbase isn't connected, say so and carry on.
+
+The detailed recipe belongs to the workspace, not to this skill: its `_markbase.md` wins over this section, and when the `markbase-reconcile` and `markbase-write-back` skills are installed, follow them for the before and after steps.
 
 ## Endpoint
 
