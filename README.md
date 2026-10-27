@@ -41,11 +41,16 @@ manual re-download.
 | Skill | Install | What it does |
 | --- | --- | --- |
 | [`sendops`](./sendops) | `npx skills add AltaCoda/skills/sendops` | In-agent guide to [SendOps](https://sendops.dev) — AWS SES setup, domains & DKIM, production access, Lists & Segments, SendQL predicates, Drip Workflows, deliverability reports, git-synced templates. |
-| [`markbase`](./markbase) | `npx skills add AltaCoda/skills/markbase` | In-agent guide to [Markbase](https://markbase.cloud) — the MCP-reached Markdown document store: workspaces & paths, typed collections (`_schema.md`), per-folder conventions (`_markbase.md`), targeted edits, optimistic concurrency, document freezes, soft-delete, temporary inboxes (mint a short-lived address so the user can forward you an email, then read it back with its authentication verdicts), and due dates (park work in a document and have the user reminded with a resume prompt). Also carries the per-host MCP registration steps, so a CLI agent can finish connecting itself after the install. |
+| [`markbase`](./markbase) | `npx skills add AltaCoda/skills/markbase` | In-agent guide to [Markbase](https://markbase.cloud) — the MCP-reached Markdown document store. Tells your agent to read the project's workspace before a task and write back what it learned after. Covers workspaces & paths, typed collections (`_schema.md`), per-folder conventions (`_markbase.md`), targeted edits, optimistic concurrency, document freezes, soft-delete, temporary inboxes (mint a short-lived address so the user can forward you an email, then read it back with its authentication verdicts), and due dates (park work in a document and have the user reminded with a resume prompt). Also carries the per-host MCP registration steps, so a CLI agent can finish connecting itself after the install. |
 
 ## How this repo is maintained
 
-Each skill's **source of truth lives in its product's own repository** and is
-mirrored here automatically on release. Edit skills upstream, not here — direct
-edits to this repo will be overwritten by the next mirror. File issues against the
-relevant product.
+Where each skill's source of truth lives depends on the skill:
+
+- **`sendops`** lives in the SendOps repository and is mirrored here
+  automatically when it changes there. Edit it upstream, not here: direct edits
+  will be overwritten by the next mirror.
+- **`markbase`** is maintained here. Change it with a pull request against
+  `main`; `npx skills add` and `npx skills update` install from `main`.
+
+File issues against the relevant product.
