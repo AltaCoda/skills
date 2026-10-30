@@ -1,7 +1,7 @@
 ---
 name: markbase
 description: >-
-  Use at the start and end of any task on a project that has a Markbase workspace: read the workspace before you begin and write back what you learned when you finish. Also use whenever the user reads, writes, searches or organizes content in Markbase, or mentions Markbase, `_markbase.md`, `_schema.md` or `workspace/...` paths; to connect Markbase ("set up Markbase", or any Markbase request when no Markbase tools are listed; the skill has the per-host MCP steps); when the user describes an email you can't see or wants an address to forward it to (a temporary inbox), or wants a standing address whose mail starts an agent (an Emails address under Dispatch); when you need to see what a webhook sender actually posts, or the user reaches for ngrok or a request bin (a temporary webhook); and for "remind me on <date>" (a due date) or "do this every Monday" (a Dispatch schedule). Markbase is a hosted Markdown store over MCP with typed collections and per-folder conventions. Load this skill before the first read or write, and re-read it if Markbase calls behave unexpectedly.
+  Use at the start and end of any task on a project that has a Markbase workspace: read the workspace before you begin and write back what you learned when you finish. Also use whenever the user reads, writes, searches or organizes content in Markbase, or mentions Markbase, `_markbase.md`, `_schema.md` or `workspace/...` paths; to connect Markbase ("set up Markbase", or any Markbase request when no Markbase tools are listed; the skill has the per-host MCP steps); when the user describes an email you can't see or wants an address to forward it to (a temporary inbox), or wants a standing address whose mail starts an agent (an Emails address under Dispatch); when you need to see what a webhook sender actually posts, or the user reaches for ngrok or a request bin (a temporary webhook); for "remind me on <date>" (a due date) or "do this every Monday" (a Dispatch schedule); or "let people @Markbase in Linear, GitHub or Slack" (a mention hook). Markbase is a hosted Markdown store over MCP with typed collections and per-folder conventions. Load this skill before the first read or write, and re-read it if Markbase calls behave unexpectedly.
 ---
 
 # Markbase
@@ -174,3 +174,18 @@ After that:
 - Reads (`read_doc`, `read_docs`, `list_docs`) carry a `schedule` object on a document that is some schedule's prompt. That document is **live**: an edit changes what the next run does, so make such edits deliberately, and never work around a lock on it — a locked prompt document is a frozen prompt.
 - If you *are* a scheduled run and there was nothing to do, say so and stop — do not invent work — and make your last line exactly `nothing to do`. The run is then recorded as having found nothing.
 - A missed tick (the service was down) becomes one catch-up run that says how many it stood in for; a tick while the previous run is still going is skipped. Pausing, re-enabling and **Run now** are on the Schedules tab; `test_dispatch_hook` is Run now for an agent.
+
+## Asking an agent in a thread: mentions
+
+People can mention Markbase on a Linear issue, a GitHub issue or pull request (`@<app slug>`, `@markbase-software-factory` on the hosted service), in a Slack thread, or on a job page's Conversation panel. A Dispatch job runs on the team's runner and the agent answers **in that thread, as the Markbase app** — never as the person whose login the runner borrows.
+
+**Setting one up.**
+1. **The app comes first.** An Owner or Admin connects Linear, GitHub or Slack on **Settings → Dispatch → Apps**. You can't do that step; if `list_dispatch_config` shows no `apps` entry for the platform, tell the person to connect it and stop there.
+2. **Then the hook:** `upsert_dispatch_hook` with `trigger: "mention"`, `app_id` (from `list_dispatch_config` `apps`), `scope` (Linear team keys, GitHub `owner/repo`s or Slack channel ids; none makes it the app's catch-all, one per app), `mentioners` (`members` by default; `list` with `mentioner_refs` — the Linear user id, GitHub login or Slack member id, never a display name; `any` turns approval on), and `lane`. It needs `dispatch.manage`; without it, tell the person what to set up on **Settings → Dispatch → Mentions**.
+3. **Tell the user** where to mention it and who may.
+
+**When you are the job.** Your prompt says so, with your job id. Everything you say to the person goes through `reply` (`progress` once you know what you will do, `question` to ask and then stop — the answer arrives as a new job with the thread so far — `result` once at the end, also your last printed line, or `error`). Everything you change on the issue (status, assignee, labels, a link, close, reopen) goes through `act`; Slack has no actions and answers `unsupported`. Never post or change anything there with your own `gh`, Linear or Slack tools — they act as a person. If either tool answers `conversation_stopped: true`, the person pressed Stop: wind down and finish.
+
+## How a job runs: profiles
+
+Every Dispatch hook runs under a **profile**: the harness, model class, effort, sandbox and timeout, and which runners may take the job. "Run this on a faster model" or "give incident jobs two hours" is a profile change, not a lane change: `upsert_dispatch_profile` (`dispatch.manage`), and a hook names it with `profile`. A field set to `auto` is chosen per job, and a job no runner can serve waits as *unschedulable* until one can.
